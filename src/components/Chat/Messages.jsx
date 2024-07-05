@@ -17,11 +17,13 @@ function Messages() {
             }
         }
     }
+
     useEffect(() => {
         if (messageContainerRef.current) {
             messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
         }
     }, [messages]);
+
     return (
         <div className="h-[36rem] overflow-y-auto flex flex-col" ref={messageContainerRef}>
             {messages &&
