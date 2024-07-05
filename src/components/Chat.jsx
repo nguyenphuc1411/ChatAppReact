@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UserConnect from "./Users/UserConnect";
 import Messages from "./Chat/Messages";
 import { useDispatch } from "react-redux";
@@ -9,9 +9,44 @@ import Profile from "./Users/Profile";
 import HeaderGroup from "./Chat/HeaderGroup";
 import { debounce } from "lodash";
 import ChatBox from "./Chat/ChatBox";
+import { useNavigate } from "react-router-dom";
+import signalRService from "../utils/signalRSevice";
+import { getMessages, pushMessages, deleteMessage } from "../Slice/ChatSlice"
+import { GetUsersConnect } from "../Slice/UsersSlice";
 function Chat() {
+    const token = localStorage.getItem("token")
     const [modalIsOpen, setmodalIsOpen] = useState(false)
     const dispatch = useDispatch()
+    const navigate = useNavigate()
+    useEffect(() => {
+        if (!token) {
+            navigate("/login")
+        }
+    }, [])
+    useEffect(() => {
+        async function startService() {
+            try {
+                await signalRService.start(token);
+                await signalRService.on("GetMessages", (data) => {
+                    dispatch(getMessages(data))
+                })
+                await signalRService.on("NewMessage", (newMessage) => {
+                    dispatch(pushMessages(newMessage))
+                })
+                await signalRService.on("CurrentUsers", (currentUsers) => {
+                    dispatch(GetUsersConnect(currentUsers))
+                })
+                await signalRService.on("DeleteMessageSuccess", (messageDeleted) => {
+                    dispatch(deleteMessage(messageDeleted.id))
+                })
+                console.log('SignalR connected');
+            } catch (error) {
+                console.error('Failed to start SignalR connection:', error);
+            }
+        }
+        startService();
+    }, []);
+
     const handleModalOpen = () => {
         setmodalIsOpen(true)
     }
@@ -34,6 +69,7 @@ function Chat() {
                     </div>
 
                     <ListGroup />
+
                 </div>
 
                 <div className="bg-slate-300 col-span-3 relative">
@@ -45,11 +81,7 @@ function Chat() {
                             <hr />
 
                             {/* Message receive */}
-                            <div className="h-82vh overflow-y-auto">
-                                <Messages />
-                            </div>
-
-
+                            <Messages />
                             {/* Chat box */}
 
                             <ChatBox />

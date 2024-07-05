@@ -3,10 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { GetGroup } from "../../Slice/GroupSlice";
 import { SetCurrentRoom } from "../../Slice/GroupSlice";
 import signalRService from "../../utils/signalRSevice";
+import { BaseUrl } from "../../utils/BaseUrl";
 function ListGroup() {
     const dispatch = useDispatch();
     const listGroup = useSelector((state) => state.groups.listRoom);
-
+    const currentRoom = useSelector(state => state.groups.currentRoom)
     useEffect(() => {
         dispatch(GetGroup());
     }, [dispatch]);
@@ -18,8 +19,12 @@ function ListGroup() {
     return (
         listGroup.map(item => {
             return (
-                <div key={item.id} className="flex mt-6 hover:bg-slate-700 cursor-pointer p-2" onClick={() => handleJoinGroup(item)}>
-                    <img className="w-14 h-14 rounded-full mr-5" src="https://www.studytienganh.vn/upload/2022/05/112274.jpg" alt="" />
+                <div key={item.id} className={`flex mt-6 hover:bg-slate-700 cursor-pointer p-2 ${currentRoom.id == item.id ? "bg-slate-700" : ""}`} onClick={() => handleJoinGroup(item)}>
+                    {
+                        item.avatar ?
+                            <img className="w-10 h-10 rounded-full mr-3" src={`${BaseUrl}images/${item.avatar}`} alt="Profile" />
+                            : <img className="w-10 h-10 rounded-full mr-3" src="https://static.vecteezy.com/system/resources/previews/005/544/718/non_2x/profile-icon-design-free-vector.jpg" alt="Profile" />
+                    }
                     <div>
                         <h5>{item.roomName}</h5>
                         <span className="text-gray-400">Admin: {item.adminName}</span>
@@ -27,6 +32,7 @@ function ListGroup() {
                 </div>
             )
         })
+
     );
 }
 export default ListGroup;

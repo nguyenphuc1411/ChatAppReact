@@ -1,25 +1,31 @@
+import { useSelector } from "react-redux";
+import { jwtDecode } from "jwt-decode";
 import signalRService from "../../utils/signalRSevice";
-import { useEffect, useState } from "react";
-
+import { BaseUrl } from "../../utils/BaseUrl";
+import { useRef, useEffect } from "react";
 function Messages() {
-    const [messages, setMessages] = useState()
-    useEffect(() => {
-        const fetchMessage = async () => {
-            await signalRService.on("GetMessages", (data) => {
-                setMessages(data)
-            })
-            await signalRService.on("NewMessage", (newMessage) => {
-                console.log(newMessage)
-                setMessages(prev => [...prev, newMessage])
-            })
+    const decode = jwtDecode(localStorage.getItem("token"))
+    const messages = useSelector(state => state.chat.listMessages)
+    const currentRoom = useSelector(state => state.groups.currentRoom)
+    const messageContainerRef = useRef(null);
+    const HandleDeleteMessage = async (id) => {
+        if (id && currentRoom) {
+            try {
+                await signalRService.send("DeleteMessage", parseInt(currentRoom.id), parseInt(id))
+            } catch (err) {
+                console.error('Error deleting message: ', err);
+            }
         }
-        fetchMessage()
-    }, [])
+    }
+    useEffect(() => {
+        if (messageContainerRef.current) {
+            messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+        }
+    }, [messages]);
     return (
-        <>
-            {
-                messages &&
-                messages.map(item => {
+        <div className="h-[36rem] overflow-y-auto flex flex-col" ref={messageContainerRef}>
+            {messages &&
+                messages.map((item) => {
                     const formatDate = (timestamp) => {
                         const date = new Date(timestamp);
                         const day = date.getDate().toString().padStart(2, '0');
@@ -28,38 +34,46 @@ function Messages() {
                         const minutes = date.getMinutes().toString().padStart(2, '0');
                         return `${day}-${month}    ${hours}:${minutes}`;
                     };
-                    if (item.isMine) {
-                        return (
-                            <div key={item.timeStamp} className="flex justify-end mt-3 pl-2">
-                                <div className="flex flex-col">
-                                    <p className="bg-purple-400 p-2 rounded-md break-words w-72">{item.content}</p>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm">{item.fullName}</span>
-                                        <span className="text-[0.75rem] mt-2">{formatDate(item.timeStamp)}</span>
-                                    </div>
-                                </div>
-                                <img className="w-10 h-10 rounded-full ml-3" src="https://www.studytienganh.vn/upload/2022/05/112274.jpg" alt="" />
-                            </div>
-                        )
-                    }
-                    else {
-                        return (
-                            <div key={item.timeStamp} className="flex justify-start mt-3 pl-2">
-                                <img className="w-10 h-10 rounded-full mr-3" src="https://www.studytienganh.vn/upload/2022/05/112274.jpg" alt="" />
-                                <div className="flex flex-col">
-                                    <p className="bg-slate-100 p-2 rounded-md break-words w-72">{item.content}</p>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm">{item.fullName}</span>
-                                        <span className="text-[0.75rem] mt-2">{formatDate(item.timeStamp)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    }
-                })
-            }
 
-        </>
+                    return (
+                        <div
+                            key={item.timeStamp}
+                            className={`flex ${decode.sub === item.email ? 'justify-end' : 'justify-start'} mt-3 pl-2`}
+                        >
+                            {decode.sub !== item.email && (
+                                item.avatar ?
+                                    <img className="w-10 h-10 rounded-full mr-3" src={`${BaseUrl}images/${item.avatar}`} alt="Profile" />
+                                    : <img className="w-10 h-10 rounded-full mr-3" src="https://static.vecteezy.com/system/resources/previews/005/544/718/non_2x/profile-icon-design-free-vector.jpg" alt="Profile" />
+                            )}
+                            <div className="flex flex-col">
+                                <p
+                                    className={`p-2 rounded-md break-words w-72 ${decode.sub === item.email ? 'bg-purple-400' : 'bg-slate-100'
+                                        }`}
+                                >
+                                    {item.content}
+                                </p>
+                                <div className="flex justify-between">
+                                    <span className="text-sm">{item.fullName}</span>
+                                    <span className="text-[0.75rem] mt-2">{formatDate(item.timeStamp)}</span>
+                                </div>
+                            </div>
+                            {decode.sub === item.email && (
+                                <>
+                                    <button onClick={() => HandleDeleteMessage(item.id)} className="mb-5">
+                                        <i className="fa-solid fa-delete-left hover:text-red-700 "></i>
+                                    </button>
+                                    {
+                                        item.avatar ?
+                                            <img className="w-10 h-10 rounded-full mr-3" src={`${BaseUrl}images/${item.avatar}`} alt="Profile" />
+                                            : <img className="w-10 h-10 rounded-full mr-3" src="https://static.vecteezy.com/system/resources/previews/005/544/718/non_2x/profile-icon-design-free-vector.jpg" alt="Profile" />
+                                    }
+                                </>
+
+                            )}
+                        </div>
+                    );
+                })}
+        </div>
     )
 }
 

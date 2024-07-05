@@ -14,11 +14,16 @@ const UsersSlice = createSlice({
         listUser: [],
         user: {}
     },
+    reducers: {
+        GetUsersConnect: (state, action) => {
+            state.listUser = action.payload[0]
+        }
+    },
     extraReducers: (builder) => builder
         .addCase(getUserInfo.fulfilled, (state, action) => {
             state.user = action.payload
         })
 
 })
-
+export const { GetUsersConnect } = UsersSlice.actions
 export default UsersSlice.reducer

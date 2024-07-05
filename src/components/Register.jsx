@@ -1,30 +1,47 @@
-import { useFormik } from "formik";
-import { validationRegiser } from "../utils/yup";
-import { Link } from "react-router-dom";
-import { ToastContainer, toast } from 'react-toastify';
+import { useFormik } from 'formik';
+import { validationRegister } from '../utils/yup';
+import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { register } from '../Slice/AuthSlice';
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useDispatch } from "react-redux";
-import { register } from "../Slice/AuthSlice";
-import { useNavigate } from "react-router-dom";
+import { useEffect } from 'react';
+import { SetStatus } from '../Slice/AuthSlice';
+
 function Register() {
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const status = useSelector((state) => state.auth.status);
     const formik = useFormik({
         initialValues: {
-            fullName: "",
-            email: "",
-            password: "",
-            confirmPassword: ""
+            fullName: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
         },
-        validationSchema: validationRegiser,
-        onSubmit: values => {
-            dispatch(register(values))
-            toast.success("Register successfully")
-            setTimeout(() => {
-                navigate("/login")
-            }, 1000);
-        }
+        validationSchema: validationRegister,
+        onSubmit: (values) => {
+            dispatch(register(values));
+        },
     });
+    useEffect(() => {
+        if (status === 'failed') {
+            toast.error('Register failed');
+            toast.clearWaitingQueue()
+        }
+        else {
+            if (status === "succeeded") {
+                toast.success('Register successfully');
+                setTimeout(() => {
+                    navigate('/login')
+                }, 1500);
+            }
+        }
+        return () => {
+            dispatch(SetStatus())
+        }
+    }, [status])
 
     return (
         <>
@@ -32,14 +49,14 @@ function Register() {
                 <form className="bg-white p-6 rounded shadow-lg w-full max-w-sm" onSubmit={formik.handleSubmit}>
                     <h3 className="text-xl font-semibold mb-4 text-center">Create a new account</h3>
                     <div>
-                        <label>Fullname</label>
+                        <label>Full Name</label>
                         <input
                             className="p-2 mb-2 w-full border-b-2 outline-none border-b-slate-900"
                             type="text"
                             name="fullName"
                             value={formik.values.fullName}
                             onChange={formik.handleChange}
-                            placeholder="Your fullname..."
+                            placeholder="Your full name..."
                         />
                         {formik.errors.fullName && formik.touched.fullName && (
                             <span className="text-red-500">{formik.errors.fullName}</span>
@@ -88,27 +105,32 @@ function Register() {
                         )}
                     </div>
 
-                    <button className="p-2 mt-3 w-full bg-blue-500 text-white rounded  hover:bg-blue-900" type="submit">Register</button>
+                    <button
+                        className="p-2 mt-3 w-full bg-blue-500 text-white rounded hover:bg-blue-900"
+                        type="submit"
+                        disabled={status === 'loading'}
+                    >
+                        {status === 'loading' ? 'Registering...' : 'Register'}
+                    </button>
                     <div className="mt-2 text-right">
-                        Are you have a account?
-                        <Link to="/login" className="text-blue-500 ml-3 cursor-pointer hover:text-blue-900">Login</Link>
+                        Already have an account?{' '}
+                        <Link to="/login" className="text-blue-500 ml-1 hover:text-blue-900">
+                            Login
+                        </Link>
                     </div>
                 </form>
             </div>
-
             <ToastContainer
                 position="top-right"
                 autoClose={2000}
                 limit={1}
                 hideProgressBar={false}
-                newestOnTop={false}
                 closeOnClick
                 rtl={false}
                 pauseOnFocusLoss
                 draggable
                 pauseOnHover
                 theme="light"
-                transition:Bounce
             />
         </>
     );

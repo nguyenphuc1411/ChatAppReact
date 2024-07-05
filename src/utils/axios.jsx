@@ -3,7 +3,6 @@ import { BaseUrl } from "./BaseUrl";
 const instance = axios.create({
     baseURL: `${BaseUrl}api/`
 })
-import { useNavigate } from "react-router-dom";
 
 instance.interceptors.request.use(
     config => {
@@ -18,15 +17,8 @@ instance.interceptors.request.use(
     }
 )
 instance.interceptors.response.use(
-    response => {
-        if (response.status == 401) {
-            console.log(response)
-            const navi = useNavigate()
-            navi("/login")
-        }
-        return response.data;
-    },
-    error => {
+    (response) => response.data,
+    (error) => {
         return Promise.reject(error);
     }
 );
