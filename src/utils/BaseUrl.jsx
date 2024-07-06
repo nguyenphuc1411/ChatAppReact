@@ -1,1 +1,1 @@
-export const BaseUrl = "https://localhost:44370/"
+export const BaseUrl = "http://chatappdemo.somee.com/"
