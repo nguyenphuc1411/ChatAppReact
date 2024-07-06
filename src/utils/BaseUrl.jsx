@@ -1,1 +1,1 @@
-export const BaseUrl = "http://chatappdemo.somee.com/"
+export const BaseUrl = "https://chatappdemo.somee.com/"
